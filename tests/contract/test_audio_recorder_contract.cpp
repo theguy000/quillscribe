@@ -25,6 +25,19 @@ protected:
         tempDir = new QTemporaryDir();
         isCIEnvironment = qEnvironmentVariableIsSet("AUDIO_TEST_MODE") && 
                          qEnvironmentVariable("AUDIO_TEST_MODE") == "CI";
+        
+        // Log audio device availability for CI debugging
+        if (isCIEnvironment) {
+            auto devices = recorder->getAvailableDevices();
+            qDebug() << "CI Audio Setup - Available input devices:" << devices.size();
+            for (int i = 0; i < devices.size(); ++i) {
+                qDebug() << "  Device" << i << ":" << devices[i].description() 
+                         << "ID:" << devices[i].id();
+            }
+            if (devices.isEmpty()) {
+                qDebug() << "CI Audio Setup - No audio input devices detected";
+            }
+        }
     }
 
     void TearDown() override {
@@ -39,10 +52,13 @@ protected:
     }
 
     // Helper function to skip test in CI when no audio devices
-    void skipIfNoAudioDevices(const QString& testName) {
+    // Returns true if test should be skipped, false if test should continue
+    bool skipIfNoAudioDevices(const QString& testName) {
         if (isCIEnvironment && !hasAudioDevices()) {
             GTEST_SKIP() << testName.toStdString() << " - Skipping in CI environment without audio devices";
+            return true;
         }
+        return false;
     }
 
     AudioRecorderService* recorder = nullptr;
@@ -53,7 +69,7 @@ protected:
 // Contract Test 1: Recording Start Time < 500ms (FR-004, PR-004)
 TEST_F(AudioRecorderContractTest, RecordingStartLatencyUnder500ms) {
     ASSERT_NE(recorder, nullptr);
-    skipIfNoAudioDevices("RecordingStartLatencyUnder500ms");
+    if (skipIfNoAudioDevices("RecordingStartLatencyUnder500ms")) return;
 
     QString testPath = tempDir->filePath("test_recording.wav");
     
@@ -72,7 +88,7 @@ TEST_F(AudioRecorderContractTest, RecordingStartLatencyUnder500ms) {
 
 // Contract Test 2: Pause/Resume Functionality (FR-012)
 TEST_F(AudioRecorderContractTest, PauseResumeRecording) {
-    skipIfNoAudioDevices("PauseResumeRecording");
+    if (skipIfNoAudioDevices("PauseResumeRecording")) return;
     
     QString testPath = tempDir->filePath("pause_test.wav");
     
@@ -132,7 +148,7 @@ TEST_F(AudioRecorderContractTest, AudioFormatValidation) {
 
 // Contract Test 5: Real-time Level Monitoring (FR-011)
 TEST_F(AudioRecorderContractTest, RealtimeLevelMonitoring) {
-    skipIfNoAudioDevices("RealtimeLevelMonitoring");
+    if (skipIfNoAudioDevices("RealtimeLevelMonitoring")) return;
     
     QSignalSpy inputLevelSpy(recorder, &IAudioRecorder::inputLevelChanged);
     QSignalSpy audioDataSpy(recorder, &IAudioRecorder::audioDataReady);
@@ -171,7 +187,7 @@ TEST_F(AudioRecorderContractTest, ErrorHandlingDeviceAccess) {
 
 // Contract Test 7: Recording Duration Accuracy
 TEST_F(AudioRecorderContractTest, RecordingDurationAccuracy) {
-    skipIfNoAudioDevices("RecordingDurationAccuracy");
+    if (skipIfNoAudioDevices("RecordingDurationAccuracy")) return;
     
     QSignalSpy durationSpy(recorder, &IAudioRecorder::durationChanged);
     
@@ -193,7 +209,7 @@ TEST_F(AudioRecorderContractTest, RecordingDurationAccuracy) {
 
 // Contract Test 8: File Output Format Compliance
 TEST_F(AudioRecorderContractTest, FileOutputFormatCompliance) {
-    skipIfNoAudioDevices("FileOutputFormatCompliance");
+    if (skipIfNoAudioDevices("FileOutputFormatCompliance")) return;
     
     QSignalSpy recordingStopped(recorder, &IAudioRecorder::recordingStopped);
     
@@ -221,7 +237,7 @@ TEST_F(AudioRecorderContractTest, FileOutputFormatCompliance) {
 
 // Contract Test 9: Memory Usage During Long Recordings
 TEST_F(AudioRecorderContractTest, MemoryUsageLongRecordings) {
-    skipIfNoAudioDevices("MemoryUsageLongRecordings");
+    if (skipIfNoAudioDevices("MemoryUsageLongRecordings")) return;
     
     QString testPath = tempDir->filePath("long_recording.wav");
     
@@ -245,7 +261,7 @@ TEST_F(AudioRecorderContractTest, MemoryUsageLongRecordings) {
 
 // Contract Test 10: Device Change Handling During Recording
 TEST_F(AudioRecorderContractTest, DeviceChangeHandlingDuringRecording) {
-    skipIfNoAudioDevices("DeviceChangeHandlingDuringRecording");
+    if (skipIfNoAudioDevices("DeviceChangeHandlingDuringRecording")) return;
     
     QString testPath = tempDir->filePath("device_change_test.wav");
     
