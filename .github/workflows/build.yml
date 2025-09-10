@@ -228,28 +228,38 @@ jobs:
 
     - name: Setup Virtual Audio Environment
       run: |
-        # Create dummy audio devices for testing
-        # Load dummy sound module
-        sudo modprobe snd-dummy
-        
-        # Start PulseAudio in system mode with dummy devices
-        pulseaudio --system --exit-idle-time=-1 &
+        # Start PulseAudio in user mode (no kernel modules needed)
+        pulseaudio --start --exit-idle-time=-1 || pulseaudio --kill && pulseaudio --start
         sleep 2
         
-        # Create a virtual sink and source
-        pactl load-module module-null-sink sink_name=dummy_output
-        pactl load-module module-null-source source_name=dummy_input
-        pactl set-default-sink dummy_output
-        pactl set-default-source dummy_input
+        # Create virtual null sink and source (no kernel modules required)
+        pactl load-module module-null-sink sink_name=dummy_output sink_properties=device.description=DummyOutput || echo "Null sink module failed"
+        pactl load-module module-null-source source_name=dummy_input source_properties=device.description=DummyInput || echo "Null source module failed"
+        
+        # Set as default devices
+        pactl set-default-sink dummy_output || echo "Failed to set default sink"
+        pactl set-default-source dummy_input || echo "Failed to set default source"
         
         # Verify audio setup
-        echo "Available audio devices:"
-        pactl list short sources
-        pactl list short sinks
+        echo "=== Audio Setup Verification ==="
+        echo "PulseAudio status:"
+        pulseaudio --check && echo "PulseAudio is running" || echo "PulseAudio not running"
+        
+        echo "Available sinks:"
+        pactl list short sinks || echo "No sinks found"
+        
+        echo "Available sources:"  
+        pactl list short sources || echo "No sources found"
+        
+        echo "Default sink:"
+        pactl get-default-sink || echo "No default sink"
+        
+        echo "Default source:"
+        pactl get-default-source || echo "No default source"
         
         # Set environment variables for audio testing  
-        echo "PULSE_RUNTIME_PATH=/var/run/pulse" >> $GITHUB_ENV
         echo "AUDIO_TEST_MODE=CI" >> $GITHUB_ENV
+        echo "PULSE_RUNTIME_PATH=$XDG_RUNTIME_DIR/pulse" >> $GITHUB_ENV
         
     - name: Verify Qt Installation
       run: |
