@@ -321,6 +321,10 @@ jobs:
           ls -la "build/${{ matrix.config == 'Release' && 'release' || 'default' }}/tests/" || echo "Tests directory not found"
         fi
 
+    - name: Remove Mimer SQL plugin to prevent AppImage build error
+      if: matrix.config == 'Release'
+      run: rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlmimer.so
+
     - name: Create AppImage (Release)
       if: matrix.config == 'Release'
       run: |
