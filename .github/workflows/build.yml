@@ -53,7 +53,7 @@ jobs:
 
     - name: Configure CMake (Windows MSVC)
       run: |
-        cmake --preset windows-msvc${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }}
+        cmake --preset windows-msvc${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH="$env:Qt6_DIR"
 
     - name: Build
       run: |
@@ -62,7 +62,7 @@ jobs:
     - name: Deploy Qt Libraries
       if: matrix.config == 'Release'
       run: |
-        $QtBinDir = "${{ env.Qt6_DIR }}\bin"
+        $QtBinDir = "$env:Qt6_DIR\bin"
         $ExePath = "build\windows-msvc-release\src\Release\quillscribe.exe"
         if (Test-Path $ExePath) {
           & "$QtBinDir\windeployqt.exe" $ExePath --multimedia --network
@@ -116,7 +116,7 @@ jobs:
 
     - name: Configure CMake (macOS)
       run: |
-        cmake --preset macos${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }}
+        cmake --preset macos${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH=$Qt6_DIR
 
     - name: Build
       run: |
@@ -127,7 +127,7 @@ jobs:
       run: |
         APP_PATH="build/macos-release/src/Release/quillscribe.app"
         if [ -d "$APP_PATH" ]; then
-          ${{ env.Qt6_DIR }}/bin/macdeployqt "$APP_PATH"
+          $Qt6_DIR/bin/macdeployqt "$APP_PATH"
           echo "Qt frameworks deployed successfully"
         else
           echo "App bundle not found at $APP_PATH"
@@ -165,7 +165,7 @@ jobs:
         retention-days: 30
 
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         config: [Debug, Release]
@@ -177,19 +177,18 @@ jobs:
 
     - name: Install System Dependencies
       run: |
+        # Install only system dependencies, Qt6 will be handled by jurplel/install-qt-action
+        # Removed libqt6multimedia6-dev and libqt6multimedia6-plugins as they don't exist in Ubuntu 24.04
         sudo apt-get update
         sudo apt-get install -y \
           build-essential \
           ninja-build \
           libgl1-mesa-dev \
-          libqt6multimedia6-dev \
-          libqt6multimedia6-plugins \
-          qt6-multimedia-dev \
-          libqt6networkauth6-dev \
-          qt6-base-dev \
-          qt6-tools-dev \
           libpulse-dev \
-          libasound2-dev
+          libasound2-dev \
+          libegl1-mesa-dev \
+          libxkbcommon-dev \
+          libgtest-dev
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -200,13 +199,26 @@ jobs:
         modules: 'qtmultimedia qtnetworkauth'
         cache: true
 
+    - name: Verify Qt Installation
+      run: |
+        echo "Qt6_DIR: $Qt6_DIR"
+        echo "QT_PLUGIN_PATH: $QT_PLUGIN_PATH"
+        echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+        ls -la $Qt6_DIR/lib/ | head -10
+        pkg-config --modversion Qt6Core Qt6Widgets Qt6Multimedia || echo "pkg-config failed"
+
     - name: Configure CMake (Linux)
       run: |
-        cmake --preset ${{ matrix.config == 'Release' && 'release' || 'default' }} -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }}
+        echo "Configuring with Qt6_DIR: $Qt6_DIR"
+        cmake --preset ${{ matrix.config == 'Release' && 'release' || 'default' }} \
+          -DCMAKE_PREFIX_PATH=$Qt6_DIR \
+          -DCMAKE_VERBOSE_MAKEFILE=ON \
+          -DQt6_DIR=$Qt6_DIR/lib/cmake/Qt6
 
     - name: Build
       run: |
-        cmake --build build/${{ matrix.config == 'Release' && 'release' || 'default' }}
+        echo "Building with configuration: ${{ matrix.config }}"
+        cmake --build build/${{ matrix.config == 'Release' && 'release' || 'default' }} --verbose
 
     - name: Run Tests
       run: |
@@ -230,7 +242,7 @@ jobs:
         cp build/release/src/quillscribe AppDir/usr/bin/
         
         # Deploy with Qt plugin
-        export QMAKE=${{ env.Qt6_DIR }}/bin/qmake
+        export QMAKE=$Qt6_DIR/bin/qmake
         ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage
         
         # Rename the generated AppImage
@@ -249,7 +261,7 @@ jobs:
   create-release:
     if: github.event_name == 'release'
     needs: [build-windows, build-macos, build-linux]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     
     steps:
     - name: Download Windows Artifacts
