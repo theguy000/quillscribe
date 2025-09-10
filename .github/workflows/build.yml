@@ -31,7 +31,7 @@ jobs:
         host: 'windows'
         target: 'desktop'
         arch: 'win64_msvc2019_64'
-        modules: 'qtmultimedia qtnetworkauth qtsql'
+        modules: 'qtmultimedia qtnetworkauth'
         cache: true
 
     - name: Setup MSVC
@@ -54,7 +54,7 @@ jobs:
         $QtBinDir = "${{ env.Qt6_DIR }}\bin"
         $ExePath = "build\windows-msvc-release\src\Release\quillscribe.exe"
         if (Test-Path $ExePath) {
-          & "$QtBinDir\windeployqt.exe" $ExePath --multimedia --network --sql
+          & "$QtBinDir\windeployqt.exe" $ExePath --multimedia --network
           Write-Host "Qt libraries deployed successfully"
         } else {
           Write-Host "Executable not found at $ExePath"
@@ -97,7 +97,7 @@ jobs:
         version: ${{ env.QT_VERSION }}
         host: 'mac'
         target: 'desktop'
-        modules: 'qtmultimedia qtnetworkauth qtsql'
+        modules: 'qtmultimedia qtnetworkauth'
         cache: true
 
     - name: Setup Ninja
@@ -175,7 +175,6 @@ jobs:
           libqt6multimedia6-plugins \
           qt6-multimedia-dev \
           libqt6networkauth6-dev \
-          libqt6sql6-dev \
           qt6-base-dev \
           qt6-tools-dev \
           libpulse-dev \
@@ -187,7 +186,7 @@ jobs:
         version: ${{ env.QT_VERSION }}
         host: 'linux'
         target: 'desktop'
-        modules: 'qtmultimedia qtnetworkauth qtsql'
+        modules: 'qtmultimedia qtnetworkauth'
         cache: true
 
     - name: Configure CMake (Linux)
