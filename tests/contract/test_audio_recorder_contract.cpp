@@ -51,12 +51,6 @@ protected:
         return !devices.isEmpty();
     }
 
-    // Helper function to skip test in CI when no audio devices
-    void skipIfNoAudioDevices(const QString& testName) {
-        if (isCIEnvironment && !hasAudioDevices()) {
-            GTEST_SKIP() << testName.toStdString() << " - Skipping in CI environment without audio devices";
-        }
-    }
 
     AudioRecorderService* recorder = nullptr;
     QTemporaryDir* tempDir = nullptr;
@@ -66,7 +60,9 @@ protected:
 // Contract Test 1: Recording Start Time < 500ms (FR-004, PR-004)
 TEST_F(AudioRecorderContractTest, RecordingStartLatencyUnder500ms) {
     ASSERT_NE(recorder, nullptr);
-    skipIfNoAudioDevices("RecordingStartLatencyUnder500ms");
+    if (isCIEnvironment && !hasAudioDevices()) {
+        GTEST_SKIP() << "RecordingStartLatencyUnder500ms - Skipping in CI environment without audio devices";
+    }
 
     QString testPath = tempDir->filePath("test_recording.wav");
     
@@ -85,7 +81,9 @@ TEST_F(AudioRecorderContractTest, RecordingStartLatencyUnder500ms) {
 
 // Contract Test 2: Pause/Resume Functionality (FR-012)
 TEST_F(AudioRecorderContractTest, PauseResumeRecording) {
-    skipIfNoAudioDevices("PauseResumeRecording");
+    if (isCIEnvironment && !hasAudioDevices()) {
+        GTEST_SKIP() << "PauseResumeRecording - Skipping in CI environment without audio devices";
+    }
     
     QString testPath = tempDir->filePath("pause_test.wav");
     
@@ -145,7 +143,9 @@ TEST_F(AudioRecorderContractTest, AudioFormatValidation) {
 
 // Contract Test 5: Real-time Level Monitoring (FR-011)
 TEST_F(AudioRecorderContractTest, RealtimeLevelMonitoring) {
-    skipIfNoAudioDevices("RealtimeLevelMonitoring");
+    if (isCIEnvironment && !hasAudioDevices()) {
+        GTEST_SKIP() << "RealtimeLevelMonitoring - Skipping in CI environment without audio devices";
+    }
     
     QSignalSpy inputLevelSpy(recorder, &IAudioRecorder::inputLevelChanged);
     QSignalSpy audioDataSpy(recorder, &IAudioRecorder::audioDataReady);
@@ -184,7 +184,9 @@ TEST_F(AudioRecorderContractTest, ErrorHandlingDeviceAccess) {
 
 // Contract Test 7: Recording Duration Accuracy
 TEST_F(AudioRecorderContractTest, RecordingDurationAccuracy) {
-    skipIfNoAudioDevices("RecordingDurationAccuracy");
+    if (isCIEnvironment && !hasAudioDevices()) {
+        GTEST_SKIP() << "RecordingDurationAccuracy - Skipping in CI environment without audio devices";
+    }
     
     QSignalSpy durationSpy(recorder, &IAudioRecorder::durationChanged);
     
@@ -206,7 +208,9 @@ TEST_F(AudioRecorderContractTest, RecordingDurationAccuracy) {
 
 // Contract Test 8: File Output Format Compliance
 TEST_F(AudioRecorderContractTest, FileOutputFormatCompliance) {
-    skipIfNoAudioDevices("FileOutputFormatCompliance");
+    if (isCIEnvironment && !hasAudioDevices()) {
+        GTEST_SKIP() << "FileOutputFormatCompliance - Skipping in CI environment without audio devices";
+    }
     
     QSignalSpy recordingStopped(recorder, &IAudioRecorder::recordingStopped);
     
@@ -234,7 +238,9 @@ TEST_F(AudioRecorderContractTest, FileOutputFormatCompliance) {
 
 // Contract Test 9: Memory Usage During Long Recordings
 TEST_F(AudioRecorderContractTest, MemoryUsageLongRecordings) {
-    skipIfNoAudioDevices("MemoryUsageLongRecordings");
+    if (isCIEnvironment && !hasAudioDevices()) {
+        GTEST_SKIP() << "MemoryUsageLongRecordings - Skipping in CI environment without audio devices";
+    }
     
     QString testPath = tempDir->filePath("long_recording.wav");
     
@@ -258,7 +264,9 @@ TEST_F(AudioRecorderContractTest, MemoryUsageLongRecordings) {
 
 // Contract Test 10: Device Change Handling During Recording
 TEST_F(AudioRecorderContractTest, DeviceChangeHandlingDuringRecording) {
-    skipIfNoAudioDevices("DeviceChangeHandlingDuringRecording");
+    if (isCIEnvironment && !hasAudioDevices()) {
+        GTEST_SKIP() << "DeviceChangeHandlingDuringRecording - Skipping in CI environment without audio devices";
+    }
     
     QString testPath = tempDir->filePath("device_change_test.wav");
     
