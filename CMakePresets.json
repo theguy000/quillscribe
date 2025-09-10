@@ -52,7 +52,9 @@
             "generator": "Ninja Multi-Config",
             "binaryDir": "${sourceDir}/build/windows-msvc",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_C_COMPILER": "cl.exe"
             },
             "condition": {
                 "type": "equals",
@@ -67,7 +69,9 @@
             "generator": "Ninja Multi-Config", 
             "binaryDir": "${sourceDir}/build/windows-msvc-release",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_C_COMPILER": "cl.exe"
             },
             "condition": {
                 "type": "equals",

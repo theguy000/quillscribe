@@ -37,8 +37,19 @@ jobs:
     - name: Setup MSVC
       uses: microsoft/setup-msbuild@v1.3
 
+    - name: Setup MSVC Environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
     - name: Setup Ninja
       uses: seanmiddleditch/gha-setup-ninja@master
+
+    - name: Verify MSVC Compiler
+      run: |
+        where cl.exe
+        cl.exe
+        echo "Compiler verification complete"
 
     - name: Configure CMake (Windows MSVC)
       run: |
