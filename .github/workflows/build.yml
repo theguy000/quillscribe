@@ -8,6 +8,10 @@ on:
   release:
     types: [ published ]
 
+permissions:
+  contents: write
+  actions: read
+
 env:
   QT_VERSION: '6.6.3'
   CMAKE_VERSION: '3.28.3'
