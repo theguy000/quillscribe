@@ -76,6 +76,18 @@ jobs:
           exit 1
         }
 
+    - name: Install NSIS
+      if: matrix.config == 'Release'
+      run: |
+        choco install nsis -y
+        Write-Host "NSIS installed successfully"
+
+    - name: Create Single Executable
+      if: matrix.config == 'Release'
+      shell: bash
+      run: |
+        ./scripts/package-single-exe.sh --platform windows --config Release
+
     - name: Run Tests
       run: |
         $TestExe = "build\windows-msvc${{ matrix.config == 'Release' && '-release' || '' }}\tests\${{ matrix.config }}\contract_tests.exe"
@@ -91,6 +103,7 @@ jobs:
       with:
         name: quillscribe-windows-x64
         path: |
+          QuillScribe-Portable.exe
           build/windows-msvc-release/src/Release/
           !build/windows-msvc-release/src/Release/*.pdb
         retention-days: 30
@@ -150,13 +163,7 @@ jobs:
     - name: Create DMG (Release)
       if: matrix.config == 'Release'
       run: |
-        APP_PATH="build/macos-release/src/Release/quillscribe.app"
-        if [ -d "$APP_PATH" ]; then
-          # Create a simple DMG
-          mkdir -p dist
-          cp -R "$APP_PATH" dist/
-          hdiutil create -volname "QuillScribe" -srcfolder dist -ov -format UDZO quillscribe-macos.dmg
-        fi
+        ./scripts/package-single-exe.sh --platform macos --config Release
 
     - name: Upload Artifacts (Release)
       if: matrix.config == 'Release'
@@ -164,7 +171,7 @@ jobs:
       with:
         name: quillscribe-macos
         path: |
-          quillscribe-macos.dmg
+          QuillScribe-macOS.dmg
           build/macos-release/src/Release/quillscribe.app
         retention-days: 30
 
@@ -333,39 +340,7 @@ jobs:
     - name: Create AppImage (Release)
       if: matrix.config == 'Release'
       run: |
-        # Install linuxdeploy and Qt plugin
-        wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-        wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
-        chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
-        
-        # Create AppDir structure
-        mkdir -p AppDir/usr/bin
-        mkdir -p AppDir/usr/share/applications
-        mkdir -p AppDir/usr/share/icons/hicolor/scalable/apps
-        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-        
-        # Copy executable
-        cp build/release/src/quillscribe AppDir/usr/bin/
-        
-        # Convert SVG to PNG for better AppImage compatibility
-        convert quillscribe.svg -resize 256x256 quillscribe.png
-        
-        # Copy desktop file and icons
-        cp QuillScribe.desktop AppDir/usr/share/applications/
-        cp quillscribe.svg AppDir/usr/share/icons/hicolor/scalable/apps/
-        cp quillscribe.png AppDir/usr/share/icons/hicolor/256x256/apps/quillscribe.png
-        
-        # Also copy to root AppDir for linuxdeploy compatibility
-        cp QuillScribe.desktop AppDir/
-        cp quillscribe.png AppDir/quillscribe.png
-        
-        # Deploy with Qt plugin
-        export QMAKE=$Qt6_DIR/bin/qmake
-        export LD_LIBRARY_PATH=$Qt6_DIR/lib:$LD_LIBRARY_PATH
-        ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage
-        
-        # Rename the generated AppImage
-        mv QuillScribe-x86_64.AppImage quillscribe-linux-x86_64.AppImage || true
+        ./scripts/package-single-exe.sh --platform linux --config Release
 
     - name: Upload Artifacts (Release)
       if: matrix.config == 'Release'
@@ -374,7 +349,7 @@ jobs:
         name: quillscribe-linux-x86_64
         path: |
           build/release/src/quillscribe
-          quillscribe-linux-x86_64.AppImage
+          QuillScribe-Linux-x86_64.AppImage
         retention-days: 30
 
   create-release:
