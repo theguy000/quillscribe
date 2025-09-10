@@ -177,8 +177,7 @@ jobs:
 
     - name: Install System Dependencies
       run: |
-        # Install only system dependencies, Qt6 will be handled by jurplel/install-qt-action
-        # Removed libqt6multimedia6-dev and libqt6multimedia6-plugins as they don't exist in Ubuntu 24.04
+        # Install system dependencies for build and Qt XCB platform plugin
         sudo apt-get update
         sudo apt-get install -y \
           build-essential \
@@ -188,7 +187,21 @@ jobs:
           libasound2-dev \
           libegl1-mesa-dev \
           libxkbcommon-dev \
-          libgtest-dev
+          libgtest-dev \
+          libxcb-xinerama0 \
+          libxcb-cursor0 \
+          libxcb1 \
+          libx11-xcb1 \
+          libxrender1 \
+          libxi6 \
+          libxkbcommon-x11-0 \
+          libxcomposite1 \
+          libxcursor1 \
+          libxdamage1 \
+          libxfixes3 \
+          libxrandr2 \
+          libxext6 \
+          xvfb
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -199,11 +212,23 @@ jobs:
         modules: 'qtmultimedia qtnetworkauth'
         cache: true
 
+    - name: Setup Qt Environment for Testing
+      run: |
+        # Set up environment for headless Qt testing
+        echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
+        echo "QT_LOGGING_RULES=qt.qpa.xcb=false" >> $GITHUB_ENV
+        echo "DISPLAY=:99.0" >> $GITHUB_ENV
+        
+        # Start virtual display
+        sudo Xvfb :99 -screen 0 1024x768x24 &
+        sleep 3
+        
     - name: Verify Qt Installation
       run: |
         echo "Qt6_DIR: $Qt6_DIR"
         echo "QT_PLUGIN_PATH: $QT_PLUGIN_PATH"
         echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+        echo "QT_QPA_PLATFORM: $QT_QPA_PLATFORM"
         ls -la $Qt6_DIR/lib/ | head -10
         pkg-config --modversion Qt6Core Qt6Widgets Qt6Multimedia || echo "pkg-config failed"
 
@@ -224,9 +249,12 @@ jobs:
       run: |
         TEST_EXE="build/${{ matrix.config == 'Release' && 'release' || 'default' }}/tests/contract_tests"
         if [ -f "$TEST_EXE" ]; then
+          echo "Running tests with Qt platform: $QT_QPA_PLATFORM"
           "$TEST_EXE"
         else
           echo "Tests not found at $TEST_EXE"
+          echo "Available files in tests directory:"
+          ls -la "build/${{ matrix.config == 'Release' && 'release' || 'default' }}/tests/" || echo "Tests directory not found"
         fi
 
     - name: Create AppImage (Release)
