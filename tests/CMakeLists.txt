@@ -64,6 +64,9 @@ function(create_test_executable test_name)
     set_target_properties(${test_name} PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED ON
+        AUTOMOC ON
+        AUTOUIC ON
+        AUTORCC ON
     )
 endfunction()
 

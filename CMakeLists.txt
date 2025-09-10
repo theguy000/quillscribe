@@ -9,8 +9,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Enable testing
 enable_testing()
 
-# Find Qt components (optional for basic build testing)
-find_package(Qt6 QUIET COMPONENTS
+# Find Qt components (required for full build)
+find_package(Qt6 REQUIRED COMPONENTS
     Core
     Widgets
     Multimedia
@@ -21,15 +21,17 @@ find_package(Qt6 QUIET COMPONENTS
 
 if(Qt6_FOUND)
     message(STATUS "Qt6 found: ${Qt6_VERSION}")
+    message(STATUS "Qt6 Core found: ${Qt6Core_VERSION}")
+    message(STATUS "Qt6 installation directory: ${Qt6_DIR}")
     set(QT_AVAILABLE TRUE)
     add_compile_definitions(QT_AVAILABLE)
+    
+    # Ensure Qt libraries are properly linked on Windows
+    if(WIN32)
+        set_property(TARGET Qt6::Core PROPERTY INTERFACE_COMPILE_DEFINITIONS QT_CORE_LIB)
+    endif()
 else()
-    message(WARNING "Qt6 not found. Some features will be disabled.")
-    message(STATUS "To install Qt6, use one of:")
-    message(STATUS "  - Install Qt6 development packages")
-    message(STATUS "  - Use vcpkg: vcpkg install qt6")
-    message(STATUS "  - Use conan: conan install qt/6.5.0@")
-    set(QT_AVAILABLE FALSE)
+    message(FATAL_ERROR "Qt6 not found. Qt6 is required for QuillScribe.")
 endif()
 
 # Find Google Test (optional for basic build testing)
@@ -44,11 +46,20 @@ else()
     set(GTEST_AVAILABLE FALSE)
 endif()
 
-# Set Qt MOC, UIC, and RCC to run automatically (only if Qt is available)
-if(QT_AVAILABLE)
-    set(CMAKE_AUTOMOC ON)
-    set(CMAKE_AUTOUIC ON)
-    set(CMAKE_AUTORCC ON)
+# Set Qt MOC, UIC, and RCC to run automatically (always when Qt is available)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+
+# Qt-specific compiler definitions for proper linking
+if(WIN32)
+    add_compile_definitions(
+        QT_CORE_LIB
+        QT_WIDGETS_LIB
+        QT_MULTIMEDIA_LIB
+        QT_NETWORK_LIB
+        QT_SQL_LIB
+    )
 endif()
 
 # Include directories

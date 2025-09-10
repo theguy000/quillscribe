@@ -86,6 +86,13 @@ if(QT_AVAILABLE)
         Qt6::Sql
     )
     
+    # Set Qt specific properties for the library
+    set_target_properties(quillscribe_lib PROPERTIES
+        AUTOMOC ON
+        AUTOUIC ON
+        AUTORCC ON
+    )
+    
     # Link whisper.cpp if available
     if(TARGET whisper)
         target_link_libraries(quillscribe_lib PUBLIC whisper)
@@ -94,13 +101,20 @@ if(QT_AVAILABLE)
     # Main executable
     add_executable(quillscribe ${QUILLSCRIBE_APP_SOURCES})
     
-    # Link executable to our library
-    target_link_libraries(quillscribe PRIVATE quillscribe_lib)
+    # Link executable to our library and Qt components directly
+    target_link_libraries(quillscribe PRIVATE
+        quillscribe_lib
+        Qt6::Core
+        Qt6::Widgets
+    )
     
     # Set executable properties
     set_target_properties(quillscribe PROPERTIES
         WIN32_EXECUTABLE TRUE
         MACOSX_BUNDLE TRUE
+        AUTOMOC ON
+        AUTOUIC ON
+        AUTORCC ON
     )
     
     message(STATUS "QuillScribe executable configured successfully")
