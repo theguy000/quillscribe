@@ -201,7 +201,10 @@ jobs:
           libxfixes3 \
           libxrandr2 \
           libxext6 \
-          xvfb
+          xvfb \
+          pulseaudio \
+          alsa-utils \
+          libasound2-plugins
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -222,6 +225,31 @@ jobs:
         # Start virtual display
         sudo Xvfb :99 -screen 0 1024x768x24 &
         sleep 3
+
+    - name: Setup Virtual Audio Environment
+      run: |
+        # Create dummy audio devices for testing
+        # Load dummy sound module
+        sudo modprobe snd-dummy
+        
+        # Start PulseAudio in system mode with dummy devices
+        pulseaudio --system --exit-idle-time=-1 &
+        sleep 2
+        
+        # Create a virtual sink and source
+        pactl load-module module-null-sink sink_name=dummy_output
+        pactl load-module module-null-source source_name=dummy_input
+        pactl set-default-sink dummy_output
+        pactl set-default-source dummy_input
+        
+        # Verify audio setup
+        echo "Available audio devices:"
+        pactl list short sources
+        pactl list short sinks
+        
+        # Set environment variables for audio testing  
+        echo "PULSE_RUNTIME_PATH=/var/run/pulse" >> $GITHUB_ENV
+        echo "AUDIO_TEST_MODE=CI" >> $GITHUB_ENV
         
     - name: Verify Qt Installation
       run: |
