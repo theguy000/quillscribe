@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=QuillScribe
+Comment=Voice-to-Text Application with AI Enhancement
+GenericName=Voice Recorder and Transcriber
+Exec=quillscribe
+Icon=quillscribe
+Terminal=false
+Categories=Audio;AudioVideo;Recorder;Office;Productivity;
+Keywords=voice;speech;text;transcription;recording;AI;enhancement;whisper;
+MimeType=audio/wav;audio/mp3;audio/ogg;audio/flac;audio/m4a;
+StartupNotify=true
+StartupWMClass=QuillScribe

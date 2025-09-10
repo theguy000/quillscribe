@@ -204,7 +204,8 @@ jobs:
           xvfb \
           pulseaudio \
           alsa-utils \
-          libasound2-plugins
+          libasound2-plugins \
+          imagemagick
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -333,9 +334,26 @@ jobs:
         wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
         chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
         
-        # Create AppDir
+        # Create AppDir structure
         mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/icons/hicolor/scalable/apps
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        
+        # Copy executable
         cp build/release/src/quillscribe AppDir/usr/bin/
+        
+        # Convert SVG to PNG for better AppImage compatibility
+        convert quillscribe.svg -resize 256x256 quillscribe.png
+        
+        # Copy desktop file and icons
+        cp QuillScribe.desktop AppDir/usr/share/applications/
+        cp quillscribe.svg AppDir/usr/share/icons/hicolor/scalable/apps/
+        cp quillscribe.png AppDir/usr/share/icons/hicolor/256x256/apps/quillscribe.png
+        
+        # Also copy to root AppDir for linuxdeploy compatibility
+        cp QuillScribe.desktop AppDir/
+        cp quillscribe.png AppDir/quillscribe.png
         
         # Deploy with Qt plugin
         export QMAKE=$Qt6_DIR/bin/qmake

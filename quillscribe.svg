@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="micGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a90e2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#357abd;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7fb3d3;stop-opacity:0.3" />
+      <stop offset="50%" style="stop-color:#4a90e2;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#7fb3d3;stop-opacity:0.3" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="128" cy="128" r="120" fill="#ffffff" stroke="#e0e0e0" stroke-width="2"/>
+  
+  <!-- Microphone body -->
+  <rect x="108" y="80" width="40" height="70" rx="20" ry="20" fill="url(#micGradient)"/>
+  
+  <!-- Microphone grille lines -->
+  <line x1="116" y1="90" x2="140" y2="90" stroke="#ffffff" stroke-width="2" opacity="0.7"/>
+  <line x1="116" y1="100" x2="140" y2="100" stroke="#ffffff" stroke-width="2" opacity="0.7"/>
+  <line x1="116" y1="110" x2="140" y2="110" stroke="#ffffff" stroke-width="2" opacity="0.7"/>
+  <line x1="116" y1="120" x2="140" y2="120" stroke="#ffffff" stroke-width="2" opacity="0.7"/>
+  <line x1="116" y1="130" x2="140" y2="130" stroke="#ffffff" stroke-width="2" opacity="0.7"/>
+  <line x1="116" y1="140" x2="140" y2="140" stroke="#ffffff" stroke-width="2" opacity="0.7"/>
+  
+  <!-- Microphone stand -->
+  <rect x="124" y="150" width="8" height="30" fill="#666666"/>
+  <rect x="110" y="175" width="36" height="8" rx="4" fill="#666666"/>
+  
+  <!-- Sound waves -->
+  <path d="M 160 100 Q 175 115 160 130" stroke="url(#waveGradient)" stroke-width="3" fill="none" opacity="0.8"/>
+  <path d="M 170 95 Q 190 115 170 135" stroke="url(#waveGradient)" stroke-width="2.5" fill="none" opacity="0.6"/>
+  <path d="M 180 90 Q 205 115 180 140" stroke="url(#waveGradient)" stroke-width="2" fill="none" opacity="0.4"/>
+  
+  <!-- Text elements (representing transcription) -->
+  <rect x="75" y="190" width="30" height="4" rx="2" fill="#4a90e2" opacity="0.6"/>
+  <rect x="110" y="190" width="20" height="4" rx="2" fill="#4a90e2" opacity="0.6"/>
+  <rect x="135" y="190" width="40" height="4" rx="2" fill="#4a90e2" opacity="0.6"/>
+  
+  <rect x="85" y="200" width="25" height="4" rx="2" fill="#7fb3d3" opacity="0.5"/>
+  <rect x="115" y="200" width="35" height="4" rx="2" fill="#7fb3d3" opacity="0.5"/>
+  <rect x="155" y="200" width="15" height="4" rx="2" fill="#7fb3d3" opacity="0.5"/>
+</svg>
