@@ -82,6 +82,11 @@ jobs:
         choco install nsis -y
         Write-Host "NSIS installed successfully"
 
+    - name: Setup Whisper Models (Windows)
+      if: matrix.config == 'Release'
+      shell: bash
+      run: ./scripts/setup-whisper-models.sh
+
     - name: Create Single Executable
       if: matrix.config == 'Release'
       shell: bash
@@ -160,9 +165,16 @@ jobs:
           echo "Tests not found at $TEST_EXE"
         fi
 
+    - name: Setup Whisper Models (macOS)
+      if: matrix.config == 'Release'
+      run: |
+        chmod +x ./scripts/setup-whisper-models.sh
+        ./scripts/setup-whisper-models.sh
+
     - name: Create DMG (Release)
       if: matrix.config == 'Release'
       run: |
+        chmod +x ./scripts/package-single-exe.sh
         ./scripts/package-single-exe.sh --platform macos --config Release
 
     - name: Upload Artifacts (Release)
@@ -337,9 +349,16 @@ jobs:
       if: matrix.config == 'Release'
       run: rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlmimer.so
 
+    - name: Setup Whisper Models (Linux)
+      if: matrix.config == 'Release'
+      run: |
+        chmod +x ./scripts/setup-whisper-models.sh
+        ./scripts/setup-whisper-models.sh
+
     - name: Create AppImage (Release)
       if: matrix.config == 'Release'
       run: |
+        chmod +x ./scripts/package-single-exe.sh
         ./scripts/package-single-exe.sh --platform linux --config Release
 
     - name: Upload Artifacts (Release)
