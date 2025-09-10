@@ -41,7 +41,7 @@ protected:
     // Helper function to skip test in CI when no audio devices
     void skipIfNoAudioDevices(const QString& testName) {
         if (isCIEnvironment && !hasAudioDevices()) {
-            GTEST_SKIP() << testName << " - Skipping in CI environment without audio devices";
+            GTEST_SKIP() << testName.toStdString() << " - Skipping in CI environment without audio devices";
         }
     }
 
