@@ -1,0 +1,283 @@
+name: Build QuillScribe
+
+on:
+  push:
+    branches: [ main, develop, 001-voice-to-text ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ published ]
+
+env:
+  QT_VERSION: '6.6.3'
+  CMAKE_VERSION: '3.28.3'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        config: [Debug, Release]
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_msvc2019_64'
+        modules: 'qtmultimedia qtnetworkauth qtsql'
+        cache: true
+
+    - name: Setup MSVC
+      uses: microsoft/setup-msbuild@v1.3
+
+    - name: Setup Ninja
+      uses: seanmiddleditch/gha-setup-ninja@master
+
+    - name: Configure CMake (Windows MSVC)
+      run: |
+        cmake --preset windows-msvc${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }}
+
+    - name: Build
+      run: |
+        cmake --build build/windows-msvc${{ matrix.config == 'Release' && '-release' || '' }} --config ${{ matrix.config }}
+
+    - name: Deploy Qt Libraries
+      if: matrix.config == 'Release'
+      run: |
+        $QtBinDir = "${{ env.Qt6_DIR }}\bin"
+        $ExePath = "build\windows-msvc-release\src\Release\quillscribe.exe"
+        if (Test-Path $ExePath) {
+          & "$QtBinDir\windeployqt.exe" $ExePath --multimedia --network --sql
+          Write-Host "Qt libraries deployed successfully"
+        } else {
+          Write-Host "Executable not found at $ExePath"
+          exit 1
+        }
+
+    - name: Run Tests
+      run: |
+        $TestExe = "build\windows-msvc${{ matrix.config == 'Release' && '-release' || '' }}\tests\${{ matrix.config }}\contract_tests.exe"
+        if (Test-Path $TestExe) {
+          & $TestExe
+        } else {
+          Write-Host "Tests not found at $TestExe"
+        }
+
+    - name: Upload Artifacts (Release)
+      if: matrix.config == 'Release'
+      uses: actions/upload-artifact@v4
+      with:
+        name: quillscribe-windows-x64
+        path: |
+          build/windows-msvc-release/src/Release/
+          !build/windows-msvc-release/src/Release/*.pdb
+        retention-days: 30
+
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        config: [Debug, Release]
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: 'mac'
+        target: 'desktop'
+        modules: 'qtmultimedia qtnetworkauth qtsql'
+        cache: true
+
+    - name: Setup Ninja
+      uses: seanmiddleditch/gha-setup-ninja@master
+
+    - name: Configure CMake (macOS)
+      run: |
+        cmake --preset macos${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }}
+
+    - name: Build
+      run: |
+        cmake --build build/macos${{ matrix.config == 'Release' && '-release' || '' }} --config ${{ matrix.config }}
+
+    - name: Deploy Qt Frameworks
+      if: matrix.config == 'Release'
+      run: |
+        APP_PATH="build/macos-release/src/Release/quillscribe.app"
+        if [ -d "$APP_PATH" ]; then
+          ${{ env.Qt6_DIR }}/bin/macdeployqt "$APP_PATH"
+          echo "Qt frameworks deployed successfully"
+        else
+          echo "App bundle not found at $APP_PATH"
+          exit 1
+        fi
+
+    - name: Run Tests
+      run: |
+        TEST_EXE="build/macos${{ matrix.config == 'Release' && '-release' || '' }}/tests/${{ matrix.config }}/contract_tests"
+        if [ -f "$TEST_EXE" ]; then
+          "$TEST_EXE"
+        else
+          echo "Tests not found at $TEST_EXE"
+        fi
+
+    - name: Create DMG (Release)
+      if: matrix.config == 'Release'
+      run: |
+        APP_PATH="build/macos-release/src/Release/quillscribe.app"
+        if [ -d "$APP_PATH" ]; then
+          # Create a simple DMG
+          mkdir -p dist
+          cp -R "$APP_PATH" dist/
+          hdiutil create -volname "QuillScribe" -srcfolder dist -ov -format UDZO quillscribe-macos.dmg
+        fi
+
+    - name: Upload Artifacts (Release)
+      if: matrix.config == 'Release'
+      uses: actions/upload-artifact@v4
+      with:
+        name: quillscribe-macos
+        path: |
+          quillscribe-macos.dmg
+          build/macos-release/src/Release/quillscribe.app
+        retention-days: 30
+
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config: [Debug, Release]
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          ninja-build \
+          libgl1-mesa-dev \
+          libqt6multimedia6-dev \
+          libqt6multimedia6-plugins \
+          qt6-multimedia-dev \
+          libqt6networkauth6-dev \
+          libqt6sql6-dev \
+          qt6-base-dev \
+          qt6-tools-dev \
+          libpulse-dev \
+          libasound2-dev
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: 'linux'
+        target: 'desktop'
+        modules: 'qtmultimedia qtnetworkauth qtsql'
+        cache: true
+
+    - name: Configure CMake (Linux)
+      run: |
+        cmake --preset ${{ matrix.config == 'Release' && 'release' || 'default' }} -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }}
+
+    - name: Build
+      run: |
+        cmake --build build/${{ matrix.config == 'Release' && 'release' || 'default' }}
+
+    - name: Run Tests
+      run: |
+        TEST_EXE="build/${{ matrix.config == 'Release' && 'release' || 'default' }}/tests/contract_tests"
+        if [ -f "$TEST_EXE" ]; then
+          "$TEST_EXE"
+        else
+          echo "Tests not found at $TEST_EXE"
+        fi
+
+    - name: Create AppImage (Release)
+      if: matrix.config == 'Release'
+      run: |
+        # Install linuxdeploy and Qt plugin
+        wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+        chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
+        
+        # Create AppDir
+        mkdir -p AppDir/usr/bin
+        cp build/release/src/quillscribe AppDir/usr/bin/
+        
+        # Deploy with Qt plugin
+        export QMAKE=${{ env.Qt6_DIR }}/bin/qmake
+        ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage
+        
+        # Rename the generated AppImage
+        mv QuillScribe-x86_64.AppImage quillscribe-linux-x86_64.AppImage || true
+
+    - name: Upload Artifacts (Release)
+      if: matrix.config == 'Release'
+      uses: actions/upload-artifact@v4
+      with:
+        name: quillscribe-linux-x86_64
+        path: |
+          build/release/src/quillscribe
+          quillscribe-linux-x86_64.AppImage
+        retention-days: 30
+
+  create-release:
+    if: github.event_name == 'release'
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download Windows Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: quillscribe-windows-x64
+        path: windows-release/
+
+    - name: Download macOS Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: quillscribe-macos
+        path: macos-release/
+
+    - name: Download Linux Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: quillscribe-linux-x86_64
+        path: linux-release/
+
+    - name: Create Release Archives
+      run: |
+        # Create Windows ZIP
+        cd windows-release && zip -r ../quillscribe-windows-x64.zip . && cd ..
+        
+        # Create Linux tar.gz
+        cd linux-release && tar -czf ../quillscribe-linux-x86_64.tar.gz . && cd ..
+        
+        # macOS DMG is already created
+
+    - name: Upload Release Assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          quillscribe-windows-x64.zip
+          quillscribe-linux-x86_64.tar.gz
+          macos-release/quillscribe-macos.dmg
+        draft: false
+        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

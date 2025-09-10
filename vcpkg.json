@@ -1,0 +1,21 @@
+{
+  "name": "quillscribe",
+  "version": "1.0.0",
+  "description": "Voice-to-Text Application with AI Enhancement",
+  "dependencies": [
+    {
+      "name": "qt6",
+      "features": [
+        "qtbase",
+        "qtmultimedia", 
+        "qtnetworkauth",
+        "qtsql"
+      ]
+    },
+    "gtest",
+    "nlohmann-json",
+    "curl"
+  ],
+  "builtin-baseline": "a7b6122f6b6504d16d96117336a0562693579933"
+}
+

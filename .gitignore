@@ -1,0 +1,210 @@
+# QuillScribe .gitignore
+
+# Build directories
+build/
+Build/
+cmake-build-*/
+
+# IDE and editor files
+.vscode/
+.idea/
+.cursor/
+*.user
+*.pro.user*
+*.autosave
+*~
+
+# Qt-specific
+*.qm
+*.prl
+.qmake.cache
+.qmake.stash
+ui_*.h
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+
+# Compiled Object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+*.lai
+*.la
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Package managers
+conan/
+vcpkg_installed/
+
+# Dependencies
+external/whisper.cpp/
+node_modules/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.cache
+
+# Model files (large binary files)
+models/whisper/*.bin
+models/whisper/*.ggml
+
+# Test results and coverage
+Testing/
+test_results/
+coverage/
+*.gcov
+*.gcno
+*.gcda
+
+# Configuration files with secrets
+config/api_keys.json
+.env
+*.key
+
+# Platform-specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+Makefile
+DartConfiguration.tcl
+install_manifest.txt
+
+# Qt MOC/UIC generated files (additional)
+*_autogen/
+*_automoc.cpp
+*_qmlcache.qrc
+
+# Build artifacts
+*.pdb
+*.ilk
+*.exp
+*.idb
+*.map
+
+# Test and debugging files
+test-qt-audio.sh
+*.dSYM/
+core.*
+
+# Package files
+*.deb
+*.rpm
+*.pkg
+*.dmg
+*.msi
+*.zip
+*.tar.gz
+*.tar.bz2
+*.AppImage
+
+# IDE specific (additional)
+.vs/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/c_cpp_properties.json
+
+# Conan generated files
+conandata.yml
+conanbuildinfo.*
+conan.lock
+
+# Memory and debugging
+*.stackdump
+vgcore.*
+*.dmp
+
+# Platform specific temporary files
+.fuse_hidden*
+.nfs*
+
+# Development and specification files (generated/temporary)
+specs/**/*.md
+memory/*.md
+templates/*.md
+CLAUDE.md
+BUILD.md
+SETUP_COMPLETE.md
+
+# Development configuration files
+.clang-format
+.clang-tidy
+
+# Generated test scripts
+test-qt-audio.sh
+test-*.sh
+
+# Documentation drafts and notes
+NOTES.md
+TODO.md
+CHANGELOG.draft.md
+
+# Development scripts output
+*.log.txt
+setup-*.log
+
+# Additional IDE and development files
+.history/
+.vscode-server/
+*.swp
+*.swo
+*.tmp
+*~
+.#*
+\#*#
+
+# OS generated files (additional)
+*.lnk
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+ehthumbs_vista.db
+
+# Development databases and caches
+*.sqlite3
+*.db3
+.cache/
+node_modules/
+
+# Python bytecode (if any Python tools are used)
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Rust artifacts (if any Rust tools are used)
+target/
+Cargo.lock
+
+# Go artifacts (if any Go tools are used)  
+vendor/
+*.exe~
+

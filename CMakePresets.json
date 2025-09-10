@@ -1,0 +1,151 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Default Config",
+            "description": "Default build using Unix Makefiles",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release Config", 
+            "description": "Release build using Unix Makefiles",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "vcpkg",
+            "displayName": "VCPKG Config",
+            "description": "Build with vcpkg dependencies",
+            "generator": "Unix Makefiles", 
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+            },
+            "condition": {
+                "type": "notEquals",
+                "lhs": "$env{VCPKG_ROOT}",
+                "rhs": ""
+            }
+        },
+        {
+            "name": "conan-default",
+            "displayName": "Conan Default Config",
+            "description": "Default build using Conan dependencies",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/conan",
+            "toolchainFile": "${sourceDir}/build/conan/conan_toolchain.cmake"
+        },
+        {
+            "name": "windows-msvc",
+            "displayName": "Windows MSVC",
+            "description": "Windows build with MSVC and Qt (native microphone support)",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/windows-msvc",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-msvc-release",
+            "displayName": "Windows MSVC Release",
+            "description": "Windows release build with MSVC and Qt",
+            "generator": "Ninja Multi-Config", 
+            "binaryDir": "${sourceDir}/build/windows-msvc-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "macos",
+            "displayName": "macOS",
+            "description": "macOS build with Apple Clang and Qt (native microphone support)",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/macos",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "macos-release",
+            "displayName": "macOS Release",
+            "description": "macOS release build with Apple Clang and Qt",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/macos-release", 
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default"
+        },
+        {
+            "name": "release", 
+            "configurePreset": "release"
+        },
+        {
+            "name": "vcpkg",
+            "configurePreset": "vcpkg"
+        },
+        {
+            "name": "conan-default",
+            "configurePreset": "conan-default"
+        },
+        {
+            "name": "windows-msvc",
+            "configurePreset": "windows-msvc"
+        },
+        {
+            "name": "windows-msvc-release", 
+            "configurePreset": "windows-msvc-release"
+        },
+        {
+            "name": "macos",
+            "configurePreset": "macos"
+        },
+        {
+            "name": "macos-release",
+            "configurePreset": "macos-release"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default",
+            "output": {"outputOnFailure": true},
+            "execution": {"noTestsAction": "error", "stopOnFailure": true}
+        }
+    ]
+}
