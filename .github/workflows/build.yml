@@ -167,6 +167,7 @@ jobs:
 
     - name: Setup Whisper Models (macOS)
       if: matrix.config == 'Release'
+      shell: bash
       run: |
         chmod +x ./scripts/setup-whisper-models.sh
         ./scripts/setup-whisper-models.sh
@@ -351,6 +352,7 @@ jobs:
 
     - name: Setup Whisper Models (Linux)
       if: matrix.config == 'Release'
+      shell: bash
       run: |
         chmod +x ./scripts/setup-whisper-models.sh
         ./scripts/setup-whisper-models.sh

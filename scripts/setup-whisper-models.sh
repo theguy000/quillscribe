@@ -5,6 +5,12 @@
 
 set -e
 
+# Ensure we're using bash (not sh)
+if [ -z "$BASH_VERSION" ]; then
+    echo "This script requires bash. Trying to re-exec with bash..."
+    exec bash "$0" "$@"
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 MODELS_DIR="$PROJECT_ROOT/models/whisper"
