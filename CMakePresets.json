@@ -80,6 +80,40 @@
             }
         },
         {
+            "name": "windows-mingw",
+            "displayName": "Windows MinGW",
+            "description": "Windows build with MinGW and Qt (via Qt Tools)",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/windows-mingw",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_COMPILER": "g++.exe",
+                "CMAKE_C_COMPILER": "gcc.exe"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-mingw-release",
+            "displayName": "Windows MinGW Release",
+            "description": "Windows release build with MinGW and Qt (via Qt Tools)",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/windows-mingw-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_COMPILER": "g++.exe",
+                "CMAKE_C_COMPILER": "gcc.exe"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
             "name": "macos",
             "displayName": "macOS",
             "description": "macOS build with Apple Clang and Qt (native microphone support)",
@@ -134,6 +168,14 @@
         {
             "name": "windows-msvc-release", 
             "configurePreset": "windows-msvc-release"
+        },
+        {
+            "name": "windows-mingw",
+            "configurePreset": "windows-mingw"
+        },
+        {
+            "name": "windows-mingw-release",
+            "configurePreset": "windows-mingw-release"
         },
         {
             "name": "macos",
