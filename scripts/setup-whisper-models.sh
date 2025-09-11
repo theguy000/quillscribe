@@ -22,29 +22,44 @@ echo "Models directory: $MODELS_DIR"
 # Create models directory
 mkdir -p "$MODELS_DIR"
 
-# Model URLs and info
-declare -A MODELS=(
-    ["tiny"]="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin"
-    ["base"]="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin"  
-    ["small"]="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin"
-    ["medium"]="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin"
-    ["large-v3"]="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin"
-)
+# Model URLs and sizes (using simple arrays for compatibility)
+get_model_url() {
+    case "$1" in
+        "tiny")    echo "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" ;;
+        "base")    echo "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin" ;;
+        "small")   echo "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin" ;;
+        "medium")  echo "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin" ;;
+        "large-v3") echo "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin" ;;
+        *) echo "" ;;
+    esac
+}
 
-declare -A MODEL_SIZES=(
-    ["tiny"]="39M"
-    ["base"]="142M"
-    ["small"]="466M" 
-    ["medium"]="1.5G"
-    ["large-v3"]="2.9G"
-)
+get_model_size() {
+    case "$1" in
+        "tiny")    echo "39M" ;;
+        "base")    echo "142M" ;;
+        "small")   echo "466M" ;;
+        "medium")  echo "1.5G" ;;
+        "large-v3") echo "2.9G" ;;
+        *) echo "Unknown" ;;
+    esac
+}
+
+# Available models list
+AVAILABLE_MODELS="tiny base small medium large-v3"
 
 # Function to download model if not exists
 download_model() {
     local model_name="$1"
-    local model_url="$2"
+    local model_url="$(get_model_url "$model_name")"
     local model_file="$MODELS_DIR/ggml-${model_name}.bin"
-    local model_size="${MODEL_SIZES[$model_name]}"
+    local model_size="$(get_model_size "$model_name")"
+    
+    if [[ -z "$model_url" ]]; then
+        echo "Error: Unknown model '$model_name'"
+        echo "Available models: $AVAILABLE_MODELS"
+        return 1
+    fi
     
     if [[ -f "$model_file" ]]; then
         echo "✓ Model $model_name already exists ($model_size)"
@@ -67,8 +82,8 @@ download_model() {
 # Default setup - download tiny and base models for development
 echo ""
 echo "Setting up default models (tiny, base) for development..."
-download_model "tiny" "${MODELS[tiny]}"
-download_model "base" "${MODELS[base]}"
+download_model "tiny"
+download_model "base"
 
 echo ""
 echo "=== Setup Complete ==="
@@ -86,13 +101,14 @@ echo "Models location: $MODELS_DIR"
 # Handle command line arguments for specific models
 if [[ $# -gt 0 ]]; then
     for model in "$@"; do
-        if [[ -n "${MODELS[$model]}" ]]; then
+        model_url="$(get_model_url "$model")"
+        if [[ -n "$model_url" ]]; then
             echo ""
             echo "Installing $model model..."
-            download_model "$model" "${MODELS[$model]}"
+            download_model "$model"
         else
             echo "Error: Unknown model '$model'"
-            echo "Available models: ${!MODELS[*]}"
+            echo "Available models: $AVAILABLE_MODELS"
             exit 1
         fi
     done
