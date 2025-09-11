@@ -78,7 +78,9 @@ jobs:
 
     - name: Configure CMake (Windows MSVC)
       run: |
-        cmake --preset windows-msvc${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH="$env:Qt6_DIR" -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+        # Only use sccache for Release builds to avoid PDB conflicts in Debug
+        $LauncherFlags = if ("${{ matrix.config }}" -eq "Release") { "-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache" } else { "" }
+        cmake --preset windows-msvc${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH="$env:Qt6_DIR" $LauncherFlags
 
     - name: Build
       run: |
