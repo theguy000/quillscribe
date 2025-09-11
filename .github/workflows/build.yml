@@ -28,6 +28,27 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Setup sccache
+      uses: hendrikmuhs/ccache-action@v1
+      with:
+        variant: sccache
+        key: windows-sccache-${{ matrix.config }}
+        max-size: 1G
+
+    - name: Cache whisper.cpp build
+      uses: actions/cache@v4
+      with:
+        path: |
+          build/windows-msvc${{ matrix.config == 'Release' && '-release' || '' }}/_deps/whisper-*
+        key: ${{ runner.os }}-whisper-v1.5.4-${{ matrix.config }}
+
+    - name: Cache Whisper Models
+      if: matrix.config == 'Release'
+      uses: actions/cache@v4
+      with:
+        path: models/whisper
+        key: ${{ runner.os }}-whisper-models-v1
+
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
@@ -57,11 +78,11 @@ jobs:
 
     - name: Configure CMake (Windows MSVC)
       run: |
-        cmake --preset windows-msvc${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH="$env:Qt6_DIR"
+        cmake --preset windows-msvc${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH="$env:Qt6_DIR" -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
     - name: Build
       run: |
-        cmake --build build/windows-msvc${{ matrix.config == 'Release' && '-release' || '' }} --config ${{ matrix.config }}
+        cmake --build build/windows-msvc${{ matrix.config == 'Release' && '-release' || '' }} --config ${{ matrix.config }} --parallel
 
     - name: Deploy Qt Libraries
       if: matrix.config == 'Release'
@@ -124,6 +145,26 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@v1
+      with:
+        key: ${{ runner.os }}-ccache-${{ matrix.config }}
+        max-size: 500M
+
+    - name: Cache whisper.cpp build
+      uses: actions/cache@v4
+      with:
+        path: |
+          build/macos${{ matrix.config == 'Release' && '-release' || '' }}/_deps/whisper-*
+        key: ${{ runner.os }}-whisper-v1.5.4-${{ matrix.config }}
+
+    - name: Cache Whisper Models
+      if: matrix.config == 'Release'
+      uses: actions/cache@v4
+      with:
+        path: models/whisper
+        key: ${{ runner.os }}-whisper-models-v1
+
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
@@ -138,11 +179,11 @@ jobs:
 
     - name: Configure CMake (macOS)
       run: |
-        cmake --preset macos${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH=$Qt6_DIR
+        cmake --preset macos${{ matrix.config == 'Release' && '-release' || '' }} -DCMAKE_PREFIX_PATH=$Qt6_DIR -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
     - name: Build
       run: |
-        cmake --build build/macos${{ matrix.config == 'Release' && '-release' || '' }} --config ${{ matrix.config }}
+        cmake --build build/macos${{ matrix.config == 'Release' && '-release' || '' }} --config ${{ matrix.config }} --parallel
 
     - name: Deploy Qt Frameworks
       if: matrix.config == 'Release'
@@ -198,6 +239,26 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@v1
+      with:
+        key: ${{ runner.os }}-ccache-${{ matrix.config }}
+        max-size: 500M
+
+    - name: Cache whisper.cpp build
+      uses: actions/cache@v4
+      with:
+        path: |
+          build/${{ matrix.config == 'Release' && 'release' || 'default' }}/_deps/whisper-*
+        key: ${{ runner.os }}-whisper-v1.5.4-${{ matrix.config }}
+
+    - name: Cache Whisper Models
+      if: matrix.config == 'Release'
+      uses: actions/cache@v4
+      with:
+        path: models/whisper
+        key: ${{ runner.os }}-whisper-models-v1
 
     - name: Install System Dependencies
       run: |
@@ -327,12 +388,14 @@ jobs:
         cmake --preset ${{ matrix.config == 'Release' && 'release' || 'default' }} \
           -DCMAKE_PREFIX_PATH=$Qt6_DIR \
           -DCMAKE_VERBOSE_MAKEFILE=ON \
-          -DQt6_DIR=$Qt6_DIR/lib/cmake/Qt6
+          -DQt6_DIR=$Qt6_DIR/lib/cmake/Qt6 \
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
     - name: Build
       run: |
         echo "Building with configuration: ${{ matrix.config }}"
-        cmake --build build/${{ matrix.config == 'Release' && 'release' || 'default' }} --verbose
+        cmake --build build/${{ matrix.config == 'Release' && 'release' || 'default' }} --verbose --parallel
 
     - name: Run Tests
       run: |
