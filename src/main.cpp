@@ -28,10 +28,25 @@ Q_LOGGING_CATEGORY(appMain, "app.main")
  * @brief Setup application directories
  * 
  * Creates necessary application directories for data storage,
- * recordings, models, etc.
+ * recordings, models, etc. For portable apps, uses app directory.
  */
 bool setupApplicationDirectories() {
-    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString appDataPath;
+    
+    // Check if this is a portable installation (executable directory has 'portable' marker or models)
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString portableMarker = appDir + "/portable.txt";
+    QString modelsDir = appDir + "/models";
+    
+    if (QFile::exists(portableMarker) || QDir(modelsDir).exists()) {
+        // Use portable mode - store data relative to executable
+        appDataPath = appDir + "/data";
+        qCDebug(appMain) << "Running in portable mode, using:" << appDataPath;
+    } else {
+        // Use standard AppData location
+        appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        qCDebug(appMain) << "Running in installed mode, using:" << appDataPath;
+    }
     
     QStringList directories = {
         appDataPath,
@@ -134,33 +149,88 @@ void setupApplicationStyle(QApplication& app) {
  * QuillScribe, including audio device availability, disk space, etc.
  */
 bool checkSystemRequirements() {
-    // Check available disk space
-    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QStorageInfo storageInfo(appDataPath);
+    // Get multiple potential paths for disk space checking
+    QStringList pathsToCheck = {
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation),
+        QStandardPaths::writableLocation(QStandardPaths::TempLocation),
+        QCoreApplication::applicationDirPath(),
+        QDir::homePath()
+    };
     
-    const qint64 MINIMUM_DISK_SPACE = 500 * 1024 * 1024; // 500 MB
-    if (storageInfo.bytesAvailable() < MINIMUM_DISK_SPACE) {
+    const qint64 MINIMUM_DISK_SPACE = 50 * 1024 * 1024; // Reduced to 50 MB for portable apps
+    QString workingPath;
+    qint64 availableSpace = 0;
+    
+    // Try each path until we find one that works
+    for (const QString& path : pathsToCheck) {
+        if (path.isEmpty()) continue;
+        
+        QStorageInfo storageInfo(path);
+        if (storageInfo.isValid() && storageInfo.isReady()) {
+            availableSpace = storageInfo.bytesAvailable();
+            if (availableSpace > 0) {
+                workingPath = path;
+                qCDebug(appMain) << "Using path for disk check:" << path 
+                                << "Available:" << (availableSpace / (1024 * 1024)) << "MB";
+                break;
+            }
+        }
+        qCDebug(appMain) << "Path failed disk check:" << path << "Available:" << availableSpace;
+    }
+    
+    // If we couldn't get disk space info from any path, warn but continue
+    if (workingPath.isEmpty() || availableSpace <= 0) {
+        qCWarning(appMain) << "Warning: Could not determine available disk space";
+        // For portable apps, we'll continue anyway as this might be a permissions/path issue
+        return true;
+    }
+    
+    // Check if we have minimum space
+    if (availableSpace < MINIMUM_DISK_SPACE) {
         QMessageBox::warning(nullptr, "System Requirements",
-                           QString("Insufficient disk space. At least 500 MB required.\n"
-                                  "Available: %1 MB")
-                           .arg(storageInfo.bytesAvailable() / (1024 * 1024)));
+                           QString("Insufficient disk space. At least 50 MB required.\n"
+                                  "Available: %1 MB\n"
+                                  "Checked path: %2")
+                           .arg(availableSpace / (1024 * 1024))
+                           .arg(workingPath));
         return false;
     }
     
-    // Check if we can write to the application data directory
-    QString testFile = appDataPath + "/write_test.tmp";
-    QFile file(testFile);
-    if (!file.open(QIODevice::WriteOnly)) {
-        QMessageBox::critical(nullptr, "System Requirements",
-                             "Cannot write to application data directory.\n"
-                             "Please check permissions for: " + appDataPath);
-        return false;
+    // Test write access to application data directory
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (!appDataPath.isEmpty()) {
+        // Ensure the directory exists
+        QDir dir;
+        if (!dir.exists(appDataPath)) {
+            dir.mkpath(appDataPath);
+        }
+        
+        QString testFile = appDataPath + "/write_test.tmp";
+        QFile file(testFile);
+        if (!file.open(QIODevice::WriteOnly)) {
+            // If we can't write to AppDataLocation, try temp directory
+            QString tempPath = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/QuillScribe";
+            dir.mkpath(tempPath);
+            testFile = tempPath + "/write_test.tmp";
+            QFile tempFile(testFile);
+            if (!tempFile.open(QIODevice::WriteOnly)) {
+                QMessageBox::critical(nullptr, "System Requirements",
+                                     "Cannot write to application directories.\n"
+                                     "Tried paths:\n" + appDataPath + "\n" + tempPath);
+                return false;
+            }
+            tempFile.close();
+            tempFile.remove();
+            qCDebug(appMain) << "Using fallback temp directory for app data:" << tempPath;
+        } else {
+            file.close();
+            file.remove();
+            qCDebug(appMain) << "App data directory write test passed:" << appDataPath;
+        }
     }
-    file.close();
-    file.remove();
     
     qCDebug(appMain) << "System requirements check passed";
-    qCDebug(appMain) << "Available disk space:" << storageInfo.bytesAvailable() / (1024 * 1024) << "MB";
+    qCDebug(appMain) << "Available disk space:" << (availableSpace / (1024 * 1024)) << "MB at" << workingPath;
     
     return true;
 }

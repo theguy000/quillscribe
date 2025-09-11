@@ -52,19 +52,55 @@ case "$PLATFORM" in
         # Create NSIS installer script
         cat > installer.nsi << "NSIS_EOF"
 !define APPNAME "QuillScribe"
+!define VERSION "1.0.0"
+
 SetCompressor /SOLID lzma
 RequestExecutionLevel user
-InstallDir $TEMP\QuillScribe_$$
+
+; Try user profile first, fallback to temp if needed
+InstallDir "$PROFILE\QuillScribe_Portable"
+InstallDirRegKey HKCU "Software\${APPNAME}\Portable" "InstallDir"
+
 SilentInstall silent
 AutoCloseWindow true
 ShowInstDetails nevershow
-Name "${APPNAME}"
+Name "${APPNAME} Portable"
 OutFile "QuillScribe-Portable.exe"
+
 Section "MainSection" SEC01
+    ; Check if we can write to user profile, fallback to temp
     SetOutPath "$INSTDIR"
+    ClearErrors
+    FileOpen $0 "$INSTDIR\test_write.tmp" w
+    IfErrors 0 WriteOK
+        ; Fallback to temp directory with better naming
+        StrCpy $INSTDIR "$TEMP\QuillScribe_Portable"
+        SetOutPath "$INSTDIR"
+        Goto ExtractFiles
+    WriteOK:
+        FileClose $0
+        Delete "$INSTDIR\test_write.tmp"
+    
+    ExtractFiles:
+    ; Extract all files
     File /r "build\windows-msvc-release\src\Release\*.*"
+    
+    ; Create portable marker file
+    FileOpen $0 "$INSTDIR\portable.txt" w
+    FileWrite $0 "QuillScribe Portable Mode$\r$\n"
+    FileWrite $0 "This file indicates the application should run in portable mode.$\r$\n"
+    FileWrite $0 "Data will be stored relative to the executable directory.$\r$\n"
+    FileClose $0
+    
+    ; Set working directory and execute
+    SetOutPath "$INSTDIR"
     ExecWait '$INSTDIR\quillscribe.exe' $0
-    RMDir /r "$INSTDIR"
+    
+    ; Only remove temp directory if we used temp
+    StrCmp $INSTDIR "$TEMP\QuillScribe_Portable" 0 SkipCleanup
+        RMDir /r "$INSTDIR"
+    SkipCleanup:
+    
     SetErrorLevel $0
 SectionEnd
 NSIS_EOF
