@@ -15,6 +15,10 @@ set(WHISPER_BUILD_TESTS OFF CACHE BOOL "Build whisper.cpp tests")
 set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "Build whisper.cpp examples") 
 set(WHISPER_BUILD_SERVER OFF CACHE BOOL "Build whisper.cpp server")
 
+# Force whisper.cpp to build as static library (resolves Windows DLL deployment issues)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
+set(WHISPER_BUILD_SHARED OFF CACHE BOOL "Build whisper as shared library" FORCE)
+
 # Enable CUDA support if available (optional)
 option(WHISPER_CUDA "Enable CUDA support for whisper.cpp" OFF)
 if(WHISPER_CUDA)
