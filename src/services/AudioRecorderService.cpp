@@ -81,12 +81,24 @@ bool AudioRecorderService::setRecordingDevice(const QAudioDevice& device) {
         return false;
     }
     
+    // Stop any ongoing level monitoring during device switching
+    bool wasLevelTimerRunning = m_levelTimer->isActive();
+    if (wasLevelTimerRunning) {
+        m_levelTimer->stop();
+    }
+    
     m_currentDevice = device;
     clearError();
     
     // Reinitialize audio input with new device
     cleanupAudioInput();
     
+    // Restart level timer if it was running (for real-time level monitoring while not recording)
+    if (wasLevelTimerRunning) {
+        m_levelTimer->start();
+    }
+    
+    qDebug() << "Successfully switched to audio device:" << device.description();
     return true;
 }
 
@@ -465,16 +477,24 @@ void AudioRecorderService::handleStateChanged(QAudio::State state) {
 }
 
 void AudioRecorderService::handleInputLevelChanged() {
+    // Thread-safe check for valid state and device
+    QMutexLocker locker(&m_stateMutex);
+    
     if (m_state == AudioRecordingState::Recording && m_levelIODevice) {
         // Get current level from the real audio stream
-        m_currentInputLevel = m_levelIODevice->getCurrentLevel() * m_inputGain;
-        m_currentAudioData = m_levelIODevice->getLastAudioData();
-        
-        // Note: inputLevelChanged signal is now emitted directly from AudioLevelIODevice
-        // via the connected lambda in startRecording()
-        
-        if (isClipping()) {
-            qWarning() << "Audio input clipping detected";
+        try {
+            m_currentInputLevel = m_levelIODevice->getCurrentLevel() * m_inputGain;
+            m_currentAudioData = m_levelIODevice->getLastAudioData();
+            
+            // Note: inputLevelChanged signal is now emitted directly from AudioLevelIODevice
+            // via the connected lambda in startRecording()
+            
+            if (isClipping()) {
+                qWarning() << "Audio input clipping detected";
+            }
+        } catch (...) {
+            // Ignore errors during device switching - level monitoring will resume
+            qDebug() << "Audio level calculation error during device switching";
         }
     }
 }

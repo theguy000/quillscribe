@@ -729,8 +729,35 @@ void MainWindow::onEnhancementProgress(const QString& requestId, int progressPer
 
 // UI interaction slots (simplified implementations)
 void MainWindow::onDeviceSelectionChanged() {
-    // Update audio device selection
-    updateDeviceList();
+    if (!m_audioRecorderService || !m_deviceComboBox) {
+        return;
+    }
+    
+    // Prevent device switching during recording
+    if (m_isRecording) {
+        showStatusMessage("Cannot change device while recording");
+        updateDeviceList(); // Reset combo box to current device
+        return;
+    }
+    
+    // Get the selected device from the combo box
+    QVariant deviceData = m_deviceComboBox->currentData();
+    if (!deviceData.isValid()) {
+        return;
+    }
+    
+    QAudioDevice selectedDevice = deviceData.value<QAudioDevice>();
+    if (selectedDevice.isNull()) {
+        return;
+    }
+    
+    // Switch to the selected device
+    if (m_audioRecorderService->setRecordingDevice(selectedDevice)) {
+        showStatusMessage(QString("Switched to device: %1").arg(selectedDevice.description()));
+    } else {
+        showStatusMessage("Failed to switch audio device");
+        updateDeviceList(); // Reset combo box to current device
+    }
 }
 
 void MainWindow::onTranscriptionProviderChanged() {
@@ -922,11 +949,24 @@ void MainWindow::updateEnhancementControls() {
 void MainWindow::updateDeviceList() {
     if (!m_audioRecorderService) return;
     
+    // Temporarily disconnect to avoid recursive calls
+    disconnect(m_deviceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), 
+               this, &MainWindow::onDeviceSelectionChanged);
+    
+    QAudioDevice currentDevice = m_audioRecorderService->getCurrentDevice();
+    
     m_deviceComboBox->clear();
     auto devices = m_audioRecorderService->getAvailableDevices();
     
-    for (const auto& device : devices) {
+    int currentIndex = 0;
+    for (int i = 0; i < devices.size(); ++i) {
+        const auto& device = devices[i];
         m_deviceComboBox->addItem(device.description(), QVariant::fromValue(device));
+        
+        // Select the current device in the combo box
+        if (device.id() == currentDevice.id()) {
+            currentIndex = i;
+        }
     }
     
     if (devices.isEmpty()) {
@@ -934,7 +974,12 @@ void MainWindow::updateDeviceList() {
         m_deviceComboBox->setEnabled(false);
     } else {
         m_deviceComboBox->setEnabled(true);
+        m_deviceComboBox->setCurrentIndex(currentIndex);
     }
+    
+    // Reconnect the signal
+    connect(m_deviceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), 
+            this, &MainWindow::onDeviceSelectionChanged);
 }
 
 void MainWindow::updateSessionList() {
